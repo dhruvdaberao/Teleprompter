@@ -110,13 +110,13 @@ export default function App() {
   }, [recorder.status, teleprompter]);
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-5">
+    <main className="min-h-screen bg-slate-950 px-3 pb-5 pt-3 text-slate-100 md:p-5" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)', paddingBottom: 'max(env(safe-area-inset-bottom), 1.25rem)' }}>
       <div className="mx-auto max-w-[1500px] space-y-4">
         <Header />
 
         {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
-        <section className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+        <section className="grid gap-4 overflow-x-clip xl:grid-cols-[300px_minmax(0,1fr)_320px]">
           <aside className="order-2 space-y-4 xl:order-1">
             <div className="hidden xl:block">
               <ScriptEditor script={script} onScriptChange={setScript} disabled={recordingPlaybackLocked} />
@@ -165,7 +165,7 @@ export default function App() {
             </div>
           </aside>
 
-          <section className="order-1 xl:order-2 space-y-4">
+          <section className="order-1 min-w-0 space-y-4 xl:order-2">
             <div className="relative mx-auto aspect-[9/16] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-700 bg-black sm:aspect-video">
               <CameraPreview stream={camera.stream} videoRef={videoRef} mirrorPreview={mirrorPreview} />
               <TeleprompterOverlay
@@ -196,15 +196,33 @@ export default function App() {
           </section>
 
           <aside className="order-3 space-y-4">
-            <OverlayControls
-              settings={mergedSettings}
-              onChange={setOverlaySettings}
-              mirrorPreview={mirrorPreview}
-              onMirrorPreviewChange={setMirrorPreview}
-              burnOverlay={burnOverlay}
-              onBurnOverlayChange={setBurnOverlay}
-            />
-            <ExportPanel blob={recorder.blob} onDiscard={recorder.discard} />
+            <div className="xl:hidden panel">
+              <details>
+                <summary className="cursor-pointer text-sm font-medium">Appearance & export</summary>
+                <div className="mt-3 space-y-3">
+                  <OverlayControls
+                    settings={mergedSettings}
+                    onChange={setOverlaySettings}
+                    mirrorPreview={mirrorPreview}
+                    onMirrorPreviewChange={setMirrorPreview}
+                    burnOverlay={burnOverlay}
+                    onBurnOverlayChange={setBurnOverlay}
+                  />
+                  <ExportPanel blob={recorder.blob} onDiscard={recorder.discard} />
+                </div>
+              </details>
+            </div>
+            <div className="hidden xl:block space-y-4">
+              <OverlayControls
+                settings={mergedSettings}
+                onChange={setOverlaySettings}
+                mirrorPreview={mirrorPreview}
+                onMirrorPreviewChange={setMirrorPreview}
+                burnOverlay={burnOverlay}
+                onBurnOverlayChange={setBurnOverlay}
+              />
+              <ExportPanel blob={recorder.blob} onDiscard={recorder.discard} />
+            </div>
           </aside>
         </section>
       </div>

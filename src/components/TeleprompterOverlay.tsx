@@ -16,6 +16,7 @@ type ResizeMode = 'width' | 'height' | 'both';
 const MIN_WIDTH_PCT = 30;
 const MIN_HEIGHT_PCT = 22;
 const GUIDE_PADDING_PX = 6;
+const FLOW_SPACER_VH = 42;
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(value, max));
@@ -172,7 +173,7 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
   return (
     <div
       ref={cardRef}
-      className="absolute z-20 overflow-hidden"
+      className="absolute z-20 overflow-hidden max-w-full"
       style={style}
       onDoubleClick={manualScrollEnabled ? onToggleScroll : undefined}
       aria-label="Teleprompter overlay"
@@ -191,7 +192,9 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
         className={`h-full whitespace-pre-wrap pr-2 pt-7 [scrollbar-width:thin] ${manualScrollEnabled ? 'touch-pan-y overflow-y-auto' : 'overflow-y-hidden'}`}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
+        <div aria-hidden="true" style={{ minHeight: `${FLOW_SPACER_VH}%` }} />
         <div>{script || 'Type your script to begin...'}</div>
+        <div aria-hidden="true" style={{ minHeight: `${FLOW_SPACER_VH}%` }} />
       </div>
 
       {settings.showGuideLine && (

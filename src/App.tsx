@@ -19,7 +19,20 @@ function clamp(num: number, min: number, max: number) {
 }
 
 function normalizeSettings(settings: OverlaySettings): OverlaySettings {
-  return { ...DEFAULT_OVERLAY_SETTINGS, ...settings };
+  const merged = { ...DEFAULT_OVERLAY_SETTINGS, ...settings };
+  const widthPct = clamp(merged.widthPct, 30, 96);
+  const maxHeightPct = clamp(merged.maxHeightPct, 22, 92);
+  const xPct = clamp(merged.xPct, 0, 100 - widthPct);
+  const yPct = clamp(merged.yPct, 0, 100 - maxHeightPct);
+
+  return {
+    ...merged,
+    widthPct,
+    maxHeightPct,
+    xPct,
+    yPct,
+    guideLineYPct: clamp(merged.guideLineYPct, 0, 100),
+  };
 }
 
 export default function App() {

@@ -24,8 +24,8 @@ export function OverlayControls({ settings, onChange, mirrorPreview, onMirrorPre
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs">
-        <label>Width<input className="input-range" type="range" min={38} max={92} value={settings.widthPct} onChange={(e) => update('widthPct', Number(e.target.value))} /></label>
-        <label>Height<input className="input-range" type="range" min={24} max={85} value={settings.maxHeightPct} onChange={(e) => update('maxHeightPct', Number(e.target.value))} /></label>
+        <label>Width<input className="input-range" type="range" min={30} max={96} value={settings.widthPct} onChange={(e) => update('widthPct', Number(e.target.value))} /></label>
+        <label>Height<input className="input-range" type="range" min={22} max={92} value={settings.maxHeightPct} onChange={(e) => update('maxHeightPct', Number(e.target.value))} /></label>
         <label>Opacity<input className="input-range" type="range" min={0.2} max={1} step={0.05} value={settings.opacity} onChange={(e) => update('opacity', Number(e.target.value))} /></label>
         <label>Font size<input className="input-range" type="range" min={16} max={64} value={settings.fontSize} onChange={(e) => update('fontSize', Number(e.target.value))} /></label>
       </div>

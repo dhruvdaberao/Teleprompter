@@ -20,7 +20,7 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
       left: `${settings.xPct}%`,
       top: `${settings.yPct}%`,
       width: `${settings.widthPct}%`,
-      maxHeight: `${settings.maxHeightPct}%`,
+      height: `${settings.maxHeightPct}%`,
       backgroundColor: settings.bgColor,
       color: settings.textColor,
       opacity: settings.opacity,
@@ -35,13 +35,11 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
       backdropFilter: settings.blur ? 'blur(8px)' : 'none',
       border: settings.showBorder ? '1px solid rgba(255,255,255,.22)' : 'none',
       transform: settings.mirrorScript ? 'scaleX(-1)' : undefined,
-      touchAction: 'none' as const,
     }),
     [settings],
   );
 
-  const onCardPointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
-    if ((event.target as HTMLElement).dataset.role === 'guide-line') return;
+  const onCardPointerDown: PointerEventHandler<HTMLElement> = (event) => {
     const el = cardRef.current;
     const parent = el?.parentElement;
     if (!el || !parent) return;
@@ -103,15 +101,25 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
   return (
     <div
       ref={cardRef}
-      className={`absolute z-20 overflow-hidden ${draggingCard ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+      className="absolute z-20 overflow-hidden"
       style={style}
-      onPointerDown={onCardPointerDown}
       onDoubleClick={onToggleScroll}
       aria-label="Teleprompter overlay"
       role="region"
     >
-      <div ref={scrollRef} className="max-h-full overflow-y-auto whitespace-pre-wrap pr-2 [scrollbar-width:thin]">
-        {script || 'Type your script to begin...'}
+      <button
+        type="button"
+        onPointerDown={onCardPointerDown}
+        className={`absolute left-1/2 top-2 z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-white/40 transition hover:bg-white/70 ${draggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+        aria-label="Drag teleprompter overlay"
+      />
+
+      <div
+        ref={scrollRef}
+        className="h-full overflow-y-auto whitespace-pre-wrap pr-2 pt-7 [scrollbar-width:thin] touch-pan-y"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
+        <div>{script || 'Type your script to begin...'}</div>
       </div>
 
       {settings.showGuideLine && (

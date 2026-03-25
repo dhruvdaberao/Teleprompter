@@ -1,5 +1,6 @@
 type Props = {
   isPlaying: boolean;
+  canResume: boolean;
   speed: number;
   showGuideLine: boolean;
   onSpeedChange: (value: number) => void;
@@ -12,6 +13,7 @@ type Props = {
 
 export function ScrollControls({
   isPlaying,
+  canResume,
   speed,
   showGuideLine,
   onSpeedChange,
@@ -25,7 +27,7 @@ export function ScrollControls({
     <section className="panel">
       <h2 className="panel-title">Teleprompter</h2>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <button className="btn-primary" onClick={onToggle}>{isPlaying ? 'Pause' : 'Play'}</button>
+        <button className="btn-primary" onClick={onToggle}>{isPlaying ? 'Pause' : canResume ? 'Resume' : 'Play'}</button>
         <button className="btn-secondary" onClick={onReset}>Top</button>
         <button className="btn-secondary" onClick={onJumpEnd}>End</button>
       </div>

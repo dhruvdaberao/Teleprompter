@@ -85,6 +85,7 @@ export default function App() {
               <div className="mt-4">
                 <ScrollControls
                   isPlaying={teleprompter.isPlaying}
+                  canResume={teleprompter.scrollTop > 0 && teleprompter.scrollTop < teleprompter.maxScroll}
                   speed={teleprompter.speed}
                   showGuideLine={mergedSettings.showGuideLine}
                   onSpeedChange={teleprompter.setSpeed}
@@ -109,6 +110,7 @@ export default function App() {
                 <div className="mt-3">
                   <ScrollControls
                     isPlaying={teleprompter.isPlaying}
+                    canResume={teleprompter.scrollTop > 0 && teleprompter.scrollTop < teleprompter.maxScroll}
                     speed={teleprompter.speed}
                     showGuideLine={mergedSettings.showGuideLine}
                     onSpeedChange={teleprompter.setSpeed}

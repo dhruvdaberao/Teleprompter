@@ -7,23 +7,24 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
   const [maxScroll, setMaxScroll] = useState(0);
 
   const speedRef = useRef(initialSpeed);
-  const positionRef = useRef(initialTop);
-  const maxScrollRef = useRef(0);
   const isPlayingRef = useRef(false);
   const rafRef = useRef<number | null>(null);
-  const lastRef = useRef<number | null>(null);
+  const lastFrameRef = useRef<number | null>(null);
   const initializedTopRef = useRef(false);
 
-  const syncFromDom = useCallback(() => {
+  const syncMetrics = useCallback(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    const nextMax = Math.max(0, el.scrollHeight - el.clientHeight);
-    maxScrollRef.current = nextMax;
-    setMaxScroll(nextMax);
+    if (!el) return { top: 0, max: 0 };
 
-    const clampedTop = Math.max(0, Math.min(el.scrollTop, nextMax));
-    positionRef.current = clampedTop;
-    setScrollTop(clampedTop);
+    const nextMax = Math.max(0, el.scrollHeight - el.clientHeight);
+    const nextTop = Math.max(0, Math.min(el.scrollTop, nextMax));
+
+    if (el.scrollTop !== nextTop) el.scrollTop = nextTop;
+
+    setMaxScroll(nextMax);
+    setScrollTop(nextTop);
+
+    return { top: nextTop, max: nextMax };
   }, [scrollRef]);
 
   useEffect(() => {
@@ -33,69 +34,83 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
   const pause = useCallback(() => {
     isPlayingRef.current = false;
     setIsPlaying(false);
-    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-    lastRef.current = null;
+
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
+    lastFrameRef.current = null;
   }, []);
 
   const setScrollPosition = useCallback(
     (next: number) => {
       const el = scrollRef.current;
       if (!el) return;
-      const clamped = Math.max(0, Math.min(next, maxScrollRef.current));
-      if (Math.abs(clamped - positionRef.current) < 0.1) return;
-      positionRef.current = clamped;
+
+      const nextMax = Math.max(0, el.scrollHeight - el.clientHeight);
+      const clamped = Math.max(0, Math.min(next, nextMax));
+
       el.scrollTop = clamped;
       setScrollTop(clamped);
+      setMaxScroll(nextMax);
     },
     [scrollRef],
   );
 
   const step = useCallback(
-    (ts: number) => {
+    (timestamp: number) => {
       const el = scrollRef.current;
       if (!el || !isPlayingRef.current) {
         pause();
         return;
       }
 
-      if (lastRef.current === null) lastRef.current = ts;
-      const delta = (ts - lastRef.current) / 1000;
-      lastRef.current = ts;
-
       const nextMax = Math.max(0, el.scrollHeight - el.clientHeight);
-      maxScrollRef.current = nextMax;
       setMaxScroll(nextMax);
 
-      const next = positionRef.current + speedRef.current * delta;
-      if (next >= nextMax) {
-        setScrollPosition(nextMax);
+      if (lastFrameRef.current === null) {
+        lastFrameRef.current = timestamp;
+      }
+
+      const deltaSeconds = (timestamp - lastFrameRef.current) / 1000;
+      lastFrameRef.current = timestamp;
+
+      const distance = speedRef.current * deltaSeconds;
+      const nextTop = Math.min(el.scrollTop + distance, nextMax);
+
+      el.scrollTop = nextTop;
+      setScrollTop(nextTop);
+
+      if (nextTop >= nextMax) {
         pause();
         return;
       }
 
-      setScrollPosition(next);
       rafRef.current = requestAnimationFrame(step);
     },
-    [pause, scrollRef, setScrollPosition],
+    [pause, scrollRef],
   );
 
   const play = useCallback(() => {
     const el = scrollRef.current;
     if (!el || isPlayingRef.current) return;
-    syncFromDom();
-    if (positionRef.current >= maxScrollRef.current) return;
+
+    const { top, max } = syncMetrics();
+    if (top >= max) return;
+
     isPlayingRef.current = true;
     setIsPlaying(true);
-    lastRef.current = null;
+    lastFrameRef.current = null;
     rafRef.current = requestAnimationFrame(step);
-  }, [scrollRef, step, syncFromDom]);
+  }, [scrollRef, step, syncMetrics]);
 
   const toggle = useCallback(() => {
     if (isPlayingRef.current) {
       pause();
       return;
     }
+
     play();
   }, [pause, play]);
 
@@ -106,20 +121,21 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
 
   const jumpEnd = useCallback(() => {
     pause();
-    syncFromDom();
-    setScrollPosition(maxScrollRef.current);
-  }, [pause, setScrollPosition, syncFromDom]);
+    const { max } = syncMetrics();
+    setScrollPosition(max);
+  }, [pause, setScrollPosition, syncMetrics]);
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || initializedTopRef.current) return;
+
     const nextMax = Math.max(0, el.scrollHeight - el.clientHeight);
-    maxScrollRef.current = nextMax;
+    const clamped = Math.max(0, Math.min(initialTop, nextMax));
+
+    el.scrollTop = clamped;
+    setScrollTop(clamped);
     setMaxScroll(nextMax);
-    const clampedInitial = Math.max(0, Math.min(initialTop, nextMax));
-    positionRef.current = clampedInitial;
-    el.scrollTop = clampedInitial;
-    setScrollTop(clampedInitial);
+
     initializedTopRef.current = true;
   }, [initialTop, scrollRef]);
 
@@ -129,11 +145,9 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
 
     const onScroll = () => {
       const nextMax = Math.max(0, el.scrollHeight - el.clientHeight);
-      maxScrollRef.current = nextMax;
+      const clamped = Math.max(0, Math.min(el.scrollTop, nextMax));
+      setScrollTop(clamped);
       setMaxScroll(nextMax);
-      const clampedTop = Math.max(0, Math.min(el.scrollTop, nextMax));
-      positionRef.current = clampedTop;
-      setScrollTop(clampedTop);
     };
 
     const ro = new ResizeObserver(onScroll);

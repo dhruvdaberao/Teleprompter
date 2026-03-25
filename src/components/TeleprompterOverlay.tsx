@@ -11,6 +11,16 @@ type Props = {
   manualScrollEnabled?: boolean;
 };
 
+type ResizeMode = 'width' | 'height' | 'both';
+
+const MIN_WIDTH_PCT = 30;
+const MIN_HEIGHT_PCT = 22;
+const GUIDE_PADDING_PX = 6;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(value, max));
+}
+
 export function TeleprompterOverlay({ script, settings, onSettingsChange, scrollRef, onToggleScroll, manualScrollEnabled = true }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [draggingCard, setDraggingCard] = useState(false);
@@ -44,12 +54,16 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
     const el = cardRef.current;
     const parent = el?.parentElement;
     if (!el || !parent) return;
+
     event.preventDefault();
+    event.stopPropagation();
     setDraggingCard(true);
+
     const startX = event.clientX;
     const startY = event.clientY;
     const startLeft = settings.xPct;
     const startTop = settings.yPct;
+    const { widthPct, maxHeightPct } = settings;
 
     const move = (ev: PointerEvent) => {
       ev.preventDefault();
@@ -57,10 +71,11 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
       const dy = ev.clientY - startY;
       const nextLeft = startLeft + (dx / parent.clientWidth) * 100;
       const nextTop = startTop + (dy / parent.clientHeight) * 100;
+
       onSettingsChange({
         ...settings,
-        xPct: Math.max(0, Math.min(nextLeft, 100 - settings.widthPct)),
-        yPct: Math.max(0, Math.min(nextTop, 100 - settings.maxHeightPct)),
+        xPct: clamp(nextLeft, 0, 100 - widthPct),
+        yPct: clamp(nextTop, 0, 100 - maxHeightPct),
       });
     };
 
@@ -75,10 +90,14 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
   };
 
   const onGuidePointerDown: PointerEventHandler<HTMLDivElement> = (event) => {
+    event.preventDefault();
     event.stopPropagation();
+
     const el = cardRef.current;
     if (!el) return;
+
     setDraggingGuide(true);
+
     const startY = event.clientY;
     const startGuide = settings.guideLineYPct;
 
@@ -86,11 +105,62 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
       ev.preventDefault();
       const dy = ev.clientY - startY;
       const next = startGuide + (dy / el.clientHeight) * 100;
-      onSettingsChange({ ...settings, guideLineYPct: Math.max(0, Math.min(100, next)) });
+      const minPct = (GUIDE_PADDING_PX / el.clientHeight) * 100;
+      const maxPct = 100 - minPct;
+      onSettingsChange({ ...settings, guideLineYPct: clamp(next, minPct, maxPct) });
     };
 
     const up = () => {
       setDraggingGuide(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', up);
+  };
+
+  const onResizePointerDown = (mode: ResizeMode): PointerEventHandler<HTMLDivElement> => (event) => {
+    const el = cardRef.current;
+    const parent = el?.parentElement;
+    if (!el || !parent) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startWidth = settings.widthPct;
+    const startHeight = settings.maxHeightPct;
+
+    const move = (ev: PointerEvent) => {
+      ev.preventDefault();
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      const nextWidthPct = startWidth + (dx / parent.clientWidth) * 100;
+      const nextHeightPct = startHeight + (dy / parent.clientHeight) * 100;
+
+      const maxWidthPct = 100 - settings.xPct;
+      const maxHeightPct = 100 - settings.yPct;
+
+      const widthPct = clamp(nextWidthPct, MIN_WIDTH_PCT, maxWidthPct);
+      const heightPct = clamp(nextHeightPct, MIN_HEIGHT_PCT, maxHeightPct);
+
+      const nextSettings: OverlaySettings = {
+        ...settings,
+        widthPct: mode === 'height' ? settings.widthPct : widthPct,
+        maxHeightPct: mode === 'width' ? settings.maxHeightPct : heightPct,
+      };
+
+      const guideMinPct = (GUIDE_PADDING_PX / el.clientHeight) * 100;
+      const guideMaxPct = 100 - guideMinPct;
+      nextSettings.guideLineYPct = clamp(nextSettings.guideLineYPct, guideMinPct, guideMaxPct);
+
+      onSettingsChange(nextSettings);
+    };
+
+    const up = () => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
     };
@@ -111,7 +181,8 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
       <button
         type="button"
         onPointerDown={onCardPointerDown}
-        className={`absolute left-1/2 top-2 z-10 h-1.5 w-16 -translate-x-1/2 rounded-full bg-white/40 transition hover:bg-white/70 ${draggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`absolute left-1/2 top-2 z-30 h-1.5 w-20 -translate-x-1/2 rounded-full bg-white/40 transition hover:bg-white/70 ${draggingCard ? 'cursor-grabbing' : 'cursor-grab'}`}
+        style={{ touchAction: 'none' }}
         aria-label="Drag teleprompter overlay"
       />
 
@@ -125,13 +196,48 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
 
       {settings.showGuideLine && (
         <div
-          data-role="guide-line"
-          className={`pointer-events-auto absolute left-0 right-0 h-[2px] -translate-y-1/2 bg-cyan-300/85 shadow-[0_0_8px_rgba(34,211,238,0.6)] ${draggingGuide ? 'cursor-ns-resize' : 'cursor-row-resize'}`}
-          style={{ top: `${settings.guideLineYPct}%` }}
+          data-role="guide-line-hit-area"
+          className={`absolute left-0 right-0 z-40 h-7 -translate-y-1/2 ${draggingGuide ? 'cursor-ns-resize' : 'cursor-row-resize'}`}
+          style={{ top: `${settings.guideLineYPct}%`, touchAction: 'none' }}
           onPointerDown={onGuidePointerDown}
-          aria-label="Reading guide line"
-        />
+          aria-label="Move reading guide"
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(settings.guideLineYPct)}
+          tabIndex={0}
+        >
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[2px] -translate-y-1/2 bg-cyan-300/90 shadow-[0_0_8px_rgba(34,211,238,0.6)]" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-100/90 bg-cyan-300/80" />
+        </div>
       )}
+
+      <div
+        className={`absolute bottom-0 right-0 top-0 z-50 w-4 cursor-ew-resize`}
+        style={{ touchAction: 'none' }}
+        onPointerDown={onResizePointerDown('width')}
+        aria-label="Resize teleprompter width"
+      >
+        <div className="absolute bottom-4 right-1 top-4 w-[2px] rounded-full bg-white/25" />
+      </div>
+
+      <div
+        className={`absolute bottom-0 left-0 right-0 z-50 h-4 cursor-ns-resize`}
+        style={{ touchAction: 'none' }}
+        onPointerDown={onResizePointerDown('height')}
+        aria-label="Resize teleprompter height"
+      >
+        <div className="absolute bottom-1 left-4 right-4 h-[2px] rounded-full bg-white/25" />
+      </div>
+
+      <div
+        className={`absolute bottom-0 right-0 z-[60] h-7 w-7 cursor-nwse-resize`}
+        style={{ touchAction: 'none' }}
+        onPointerDown={onResizePointerDown('both')}
+        aria-label="Resize teleprompter width and height"
+      >
+        <div className="absolute bottom-[5px] right-[5px] h-3.5 w-3.5 rounded-sm border-r-2 border-b-2 border-white/55" />
+      </div>
     </div>
   );
 }

@@ -8,9 +8,10 @@ type Props = {
   onSettingsChange: (next: OverlaySettings) => void;
   scrollRef: RefObject<HTMLDivElement>;
   onToggleScroll: () => void;
+  manualScrollEnabled?: boolean;
 };
 
-export function TeleprompterOverlay({ script, settings, onSettingsChange, scrollRef, onToggleScroll }: Props) {
+export function TeleprompterOverlay({ script, settings, onSettingsChange, scrollRef, onToggleScroll, manualScrollEnabled = true }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [draggingCard, setDraggingCard] = useState(false);
   const [draggingGuide, setDraggingGuide] = useState(false);
@@ -103,7 +104,7 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
       ref={cardRef}
       className="absolute z-20 overflow-hidden"
       style={style}
-      onDoubleClick={onToggleScroll}
+      onDoubleClick={manualScrollEnabled ? onToggleScroll : undefined}
       aria-label="Teleprompter overlay"
       role="region"
     >
@@ -116,7 +117,7 @@ export function TeleprompterOverlay({ script, settings, onSettingsChange, scroll
 
       <div
         ref={scrollRef}
-        className="h-full overflow-y-auto whitespace-pre-wrap pr-2 pt-7 [scrollbar-width:thin] touch-pan-y"
+        className={`h-full whitespace-pre-wrap pr-2 pt-7 [scrollbar-width:thin] ${manualScrollEnabled ? 'touch-pan-y overflow-y-auto' : 'overflow-y-hidden'}`}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div>{script || 'Type your script to begin...'}</div>

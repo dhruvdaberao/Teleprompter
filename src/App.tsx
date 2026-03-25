@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CameraPreview } from './components/CameraPreview';
+import { Header } from './components/Header';
 import { ExportPanel } from './components/ExportPanel';
 import { OverlayControls } from './components/OverlayControls';
 import { RecordingControls } from './components/RecordingControls';
@@ -98,10 +99,7 @@ export default function App() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-5">
       <div className="mx-auto max-w-[1500px] space-y-4">
-        <header className="rounded-2xl border border-slate-800/90 bg-slate-900/75 p-4">
-          <h1 className="text-xl font-semibold">Teleprompter Video Recorder</h1>
-          <p className="text-sm text-slate-400">Centered preview, cleaner sidebars, and smooth teleprompter scrolling.</p>
-        </header>
+        <Header />
 
         {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 

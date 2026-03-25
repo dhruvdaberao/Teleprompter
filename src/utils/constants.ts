@@ -10,24 +10,26 @@ Tip: slow down for emphasis on key points.
 When you're ready, hit record and deliver with confidence.`;
 
 export const DEFAULT_OVERLAY_SETTINGS: OverlaySettings = {
-  xPct: 8,
+  xPct: 16,
   yPct: 10,
-  widthPct: 78,
-  maxHeightPct: 70,
-  opacity: 0.55,
+  widthPct: 68,
+  maxHeightPct: 52,
+  opacity: 0.62,
   bgColor: '#0f172a',
   textColor: '#f8fafc',
-  fontSize: 28,
-  lineHeight: 1.5,
+  fontSize: 30,
+  lineHeight: 1.45,
   letterSpacing: 0,
-  padding: 20,
-  borderRadius: 18,
-  shadow: 22,
+  padding: 18,
+  borderRadius: 16,
+  shadow: 18,
   align: 'left',
   fontFamily: 'Inter, system-ui, sans-serif',
   blur: true,
   showBorder: true,
   mirrorScript: false,
+  showGuideLine: true,
+  guideLineYPct: 50,
 };
 
 export const STORAGE_KEYS = {

@@ -11,7 +11,7 @@ export function ScriptEditor({ script, onScriptChange, disabled }: Props) {
 
   return (
     <section className="panel">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between">
         <h2 className="panel-title">Script</h2>
         <span className="text-xs text-slate-400">{wordCount} words</span>
       </div>
@@ -19,10 +19,10 @@ export function ScriptEditor({ script, onScriptChange, disabled }: Props) {
         value={script}
         disabled={disabled}
         onChange={(e) => onScriptChange(e.target.value)}
-        className="h-52 w-full rounded-xl border border-slate-700 bg-slate-950/80 p-3 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none"
+        className="h-44 w-full resize-y rounded-xl border border-slate-700 bg-slate-950/80 p-3 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none"
         placeholder="Paste or write your script here..."
       />
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-2 grid grid-cols-3 gap-2">
         <button className="btn-secondary" onClick={() => onScriptChange('')} disabled={disabled}>Clear</button>
         <button className="btn-secondary" onClick={() => onScriptChange(SAMPLE_SCRIPT)} disabled={disabled}>Sample</button>
         <button className="btn-secondary" onClick={() => navigator.clipboard.readText().then(onScriptChange).catch(() => undefined)} disabled={disabled}>Paste</button>

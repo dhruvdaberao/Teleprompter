@@ -11,6 +11,7 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
   const rafRef = useRef<number | null>(null);
   const lastFrameRef = useRef<number | null>(null);
   const initializedTopRef = useRef(false);
+  const positionRef = useRef(initialTop);
 
   const syncMetrics = useCallback(() => {
     const el = scrollRef.current;
@@ -23,6 +24,7 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
 
     setMaxScroll(nextMax);
     setScrollTop(nextTop);
+    positionRef.current = nextTop;
 
     return { top: nextTop, max: nextMax };
   }, [scrollRef]);
@@ -54,6 +56,7 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
       el.scrollTop = clamped;
       setScrollTop(clamped);
       setMaxScroll(nextMax);
+      positionRef.current = clamped;
     },
     [scrollRef],
   );
@@ -77,10 +80,11 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
       lastFrameRef.current = timestamp;
 
       const distance = speedRef.current * deltaSeconds;
-      const nextTop = Math.min(el.scrollTop + distance, nextMax);
+      const nextTop = Math.min(positionRef.current + distance, nextMax);
 
       el.scrollTop = nextTop;
       setScrollTop(nextTop);
+      positionRef.current = nextTop;
 
       if (nextTop >= nextMax) {
         pause();
@@ -135,6 +139,7 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
     el.scrollTop = clamped;
     setScrollTop(clamped);
     setMaxScroll(nextMax);
+    positionRef.current = clamped;
 
     initializedTopRef.current = true;
   }, [initialTop, scrollRef]);
@@ -148,6 +153,7 @@ export function useTeleprompterScroll(scrollRef: RefObject<HTMLElement>, initial
       const clamped = Math.max(0, Math.min(el.scrollTop, nextMax));
       setScrollTop(clamped);
       setMaxScroll(nextMax);
+      positionRef.current = clamped;
     };
 
     const ro = new ResizeObserver(onScroll);

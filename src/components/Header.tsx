@@ -10,10 +10,11 @@ export function Header() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <rect x="4" y="5" width="16" height="14" rx="3" stroke="currentColor" strokeWidth="1.8" />
-          <path d="M9 10L12.7 12L9 14V10Z" fill="currentColor" />
-          <path d="M14.5 10.5H17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-          <path d="M14.5 13.5H17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          <rect x="3.5" y="4" width="17" height="16" rx="4" stroke="currentColor" strokeWidth="1.7" />
+          <path d="M8 9.25C8 7.45 9.4 6 11.2 6C13 6 14.4 7.45 14.4 9.25V12.75C14.4 14.55 13 16 11.2 16C9.4 16 8 14.55 8 12.75V9.25Z" fill="currentColor" />
+          <path d="M16.8 11.5C16.8 14.45 14.45 16.8 11.5 16.8C8.55 16.8 6.2 14.45 6.2 11.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M11.5 16.9V18.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+          <path d="M9.2 19.6H13.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         </svg>
       </div>
 

@@ -9,27 +9,28 @@
 body {
   margin: 0;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #020617;
 }
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-slate-800 bg-slate-900/70 p-4 backdrop-blur;
+    @apply rounded-2xl border border-slate-800/80 bg-slate-900/65 p-3 backdrop-blur-sm;
   }
 
   .panel-title {
-    @apply text-sm font-semibold uppercase tracking-wide text-slate-200;
+    @apply text-xs font-semibold uppercase tracking-wide text-slate-200;
   }
 
   .btn-primary {
-    @apply rounded-xl bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-danger {
-    @apply rounded-xl border border-rose-700 bg-rose-900/60 px-3 py-2 text-sm transition hover:bg-rose-800;
+    @apply rounded-lg border border-rose-700 bg-rose-900/60 px-3 py-2 text-sm transition hover:bg-rose-800;
   }
 
   .input-range {

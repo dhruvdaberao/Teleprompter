@@ -19,6 +19,8 @@ export type OverlaySettings = {
   blur: boolean;
   showBorder: boolean;
   mirrorScript: boolean;
+  showGuideLine: boolean;
+  guideLineYPct: number;
 };
 
 export type RecorderStatus = 'idle' | 'recording' | 'paused' | 'stopped';

@@ -10,10 +10,15 @@ import { useCameraStream } from './hooks/useCameraStream';
 import { useLocalStorageState } from './hooks/useLocalStorageState';
 import { useMediaRecorder } from './hooks/useMediaRecorder';
 import { useTeleprompterScroll } from './hooks/useTeleprompterScroll';
+import type { OverlaySettings } from './types';
 import { DEFAULT_OVERLAY_SETTINGS, SAMPLE_SCRIPT, STORAGE_KEYS } from './utils/constants';
 
 function clamp(num: number, min: number, max: number) {
   return Math.max(min, Math.min(max, num));
+}
+
+function normalizeSettings(settings: OverlaySettings): OverlaySettings {
+  return { ...DEFAULT_OVERLAY_SETTINGS, ...settings };
 }
 
 export default function App() {
@@ -22,12 +27,14 @@ export default function App() {
 
   const [script, setScript] = useLocalStorageState(STORAGE_KEYS.script, SAMPLE_SCRIPT);
   const [overlaySettings, setOverlaySettings] = useLocalStorageState(STORAGE_KEYS.overlay, DEFAULT_OVERLAY_SETTINGS);
-  const [scrollSpeed, setScrollSpeed] = useLocalStorageState(STORAGE_KEYS.scrollSpeed, 58);
+  const [scrollSpeed, setScrollSpeed] = useLocalStorageState(STORAGE_KEYS.scrollSpeed, 52);
   const [scrollTop, setScrollTop] = useLocalStorageState(STORAGE_KEYS.scrollTop, 0);
   const [mirrorPreview, setMirrorPreview] = useLocalStorageState(STORAGE_KEYS.mirrorPreview, true);
   const [burnOverlay, setBurnOverlay] = useLocalStorageState(STORAGE_KEYS.burnOverlay, false);
   const [facingMode, setFacingMode] = useLocalStorageState<'user' | 'environment'>(STORAGE_KEYS.facingMode, 'user');
   const [savedMicMuted, setSavedMicMuted] = useLocalStorageState(STORAGE_KEYS.mutedMic, false);
+
+  const mergedSettings = useMemo(() => normalizeSettings(overlaySettings), [overlaySettings]);
 
   const camera = useCameraStream(facingMode, savedMicMuted);
   const recorder = useMediaRecorder(camera.stream, videoRef);
@@ -41,7 +48,7 @@ export default function App() {
     const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => setScrollTop(el.scrollTop);
-    el.addEventListener('scroll', onScroll);
+    el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, [setScrollTop]);
 
@@ -51,8 +58,8 @@ export default function App() {
         e.preventDefault();
         teleprompter.toggle();
       }
-      if (e.key === 'ArrowUp') teleprompter.setSpeed((s) => clamp(s - 8, 15, 260));
-      if (e.key === 'ArrowDown') teleprompter.setSpeed((s) => clamp(s + 8, 15, 260));
+      if (e.key === 'ArrowUp') teleprompter.setSpeed((s) => clamp(s - 8, 10, 260));
+      if (e.key === 'ArrowDown') teleprompter.setSpeed((s) => clamp(s + 8, 10, 260));
       if (e.key.toLowerCase() === 'r') teleprompter.reset();
     };
     window.addEventListener('keydown', onKey);
@@ -62,22 +69,66 @@ export default function App() {
   const error = useMemo(() => camera.error || recorder.error, [camera.error, recorder.error]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 p-3 md:p-6">
-      <div className="mx-auto max-w-[1400px] space-y-4">
-        <header className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 backdrop-blur">
+    <main className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-5">
+      <div className="mx-auto max-w-[1500px] space-y-4">
+        <header className="rounded-2xl border border-slate-800/90 bg-slate-900/75 p-4">
           <h1 className="text-xl font-semibold">Teleprompter Video Recorder</h1>
-          <p className="text-sm text-slate-400">Record polished talking-head videos with a draggable, customizable teleprompter overlay.</p>
+          <p className="text-sm text-slate-400">Centered preview, cleaner sidebars, and smooth teleprompter scrolling.</p>
         </header>
 
         {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
-        <section className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
-          <div className="space-y-4">
-            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl border border-slate-700 bg-black sm:aspect-video">
+        <section className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
+          <aside className="order-2 space-y-4 xl:order-1">
+            <div className="hidden xl:block">
+              <ScriptEditor script={script} onScriptChange={setScript} disabled={recorder.status === 'recording'} />
+              <div className="mt-4">
+                <ScrollControls
+                  isPlaying={teleprompter.isPlaying}
+                  speed={teleprompter.speed}
+                  showGuideLine={mergedSettings.showGuideLine}
+                  onSpeedChange={teleprompter.setSpeed}
+                  onToggle={teleprompter.toggle}
+                  onReset={teleprompter.reset}
+                  onJumpEnd={teleprompter.jumpEnd}
+                  onToggleGuideLine={() => setOverlaySettings({ ...mergedSettings, showGuideLine: !mergedSettings.showGuideLine })}
+                  onResetGuideLine={() => setOverlaySettings({ ...mergedSettings, guideLineYPct: 50 })}
+                />
+              </div>
+            </div>
+
+            <div className="xl:hidden panel space-y-2">
+              <details open>
+                <summary className="cursor-pointer text-sm font-medium">Script</summary>
+                <div className="mt-3">
+                  <ScriptEditor script={script} onScriptChange={setScript} disabled={recorder.status === 'recording'} />
+                </div>
+              </details>
+              <details>
+                <summary className="cursor-pointer text-sm font-medium">Teleprompter controls</summary>
+                <div className="mt-3">
+                  <ScrollControls
+                    isPlaying={teleprompter.isPlaying}
+                    speed={teleprompter.speed}
+                    showGuideLine={mergedSettings.showGuideLine}
+                    onSpeedChange={teleprompter.setSpeed}
+                    onToggle={teleprompter.toggle}
+                    onReset={teleprompter.reset}
+                    onJumpEnd={teleprompter.jumpEnd}
+                    onToggleGuideLine={() => setOverlaySettings({ ...mergedSettings, showGuideLine: !mergedSettings.showGuideLine })}
+                    onResetGuideLine={() => setOverlaySettings({ ...mergedSettings, guideLineYPct: 50 })}
+                  />
+                </div>
+              </details>
+            </div>
+          </aside>
+
+          <section className="order-1 xl:order-2 space-y-4">
+            <div className="relative mx-auto aspect-[9/16] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-700 bg-black sm:aspect-video">
               <CameraPreview stream={camera.stream} videoRef={videoRef} mirrorPreview={mirrorPreview} />
               <TeleprompterOverlay
                 script={script}
-                settings={overlaySettings}
+                settings={mergedSettings}
                 onSettingsChange={setOverlaySettings}
                 scrollRef={scrollRef}
                 onToggleScroll={teleprompter.toggle}
@@ -85,40 +136,33 @@ export default function App() {
               {camera.loading && <div className="absolute inset-0 grid place-items-center bg-black/60 text-sm">Connecting camera…</div>}
             </div>
 
-            <RecordingControls
-              status={recorder.status}
-              seconds={recorder.seconds}
-              canPause={typeof MediaRecorder !== 'undefined' && 'pause' in MediaRecorder.prototype}
-              onStart={() => recorder.start(burnOverlay, overlaySettings, script, scrollRef.current?.scrollTop ?? 0, mirrorPreview)}
-              onPause={recorder.pause}
-              onResume={recorder.resume}
-              onStop={recorder.stop}
-              onSwitchCamera={camera.switchCamera}
-              onToggleMic={camera.toggleMic}
-              micMuted={camera.micMuted}
-            />
-            <ExportPanel blob={recorder.blob} onDiscard={recorder.discard} />
-          </div>
+            <div className="mx-auto w-full max-w-[860px]">
+              <RecordingControls
+                status={recorder.status}
+                seconds={recorder.seconds}
+                canPause={typeof MediaRecorder !== 'undefined' && 'pause' in MediaRecorder.prototype}
+                onStart={() => recorder.start(burnOverlay, mergedSettings, script, scrollRef.current?.scrollTop ?? 0, mirrorPreview)}
+                onPause={recorder.pause}
+                onResume={recorder.resume}
+                onStop={recorder.stop}
+                onSwitchCamera={camera.switchCamera}
+                onToggleMic={camera.toggleMic}
+                micMuted={camera.micMuted}
+              />
+            </div>
+          </section>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <ScriptEditor script={script} onScriptChange={setScript} disabled={recorder.status === 'recording'} />
-            <ScrollControls
-              isPlaying={teleprompter.isPlaying}
-              speed={teleprompter.speed}
-              onSpeedChange={teleprompter.setSpeed}
-              onToggle={teleprompter.toggle}
-              onReset={teleprompter.reset}
-              onJumpEnd={teleprompter.jumpEnd}
-            />
+          <aside className="order-3 space-y-4">
             <OverlayControls
-              settings={overlaySettings}
+              settings={mergedSettings}
               onChange={setOverlaySettings}
               mirrorPreview={mirrorPreview}
               onMirrorPreviewChange={setMirrorPreview}
               burnOverlay={burnOverlay}
               onBurnOverlayChange={setBurnOverlay}
             />
-          </div>
+            <ExportPanel blob={recorder.blob} onDiscard={recorder.discard} />
+          </aside>
         </section>
       </div>
     </main>

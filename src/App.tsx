@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { CameraPreview } from './components/CameraPreview';
 import { ExportPanel } from './components/ExportPanel';
 import { OverlayControls } from './components/OverlayControls';
@@ -67,6 +67,33 @@ export default function App() {
   }, [teleprompter]);
 
   const error = useMemo(() => camera.error || recorder.error, [camera.error, recorder.error]);
+  const recordingActive = recorder.status === 'recording' || recorder.status === 'paused';
+  const recordingPlaybackLocked = recorder.status === 'recording';
+  const teleprompterPlaying = recordingActive ? recorder.status === 'recording' : teleprompter.isPlaying;
+
+  const startSessionRecording = useCallback(() => {
+    recorder.start(burnOverlay, mergedSettings, script, scrollRef.current?.scrollTop ?? 0, mirrorPreview);
+    teleprompter.play();
+  }, [burnOverlay, mergedSettings, mirrorPreview, recorder, script, teleprompter]);
+
+  const pauseSessionRecording = useCallback(() => {
+    recorder.pause();
+    teleprompter.pause();
+  }, [recorder, teleprompter]);
+
+  const resumeSessionRecording = useCallback(() => {
+    recorder.resume();
+    teleprompter.play();
+  }, [recorder, teleprompter]);
+
+  const stopSessionRecording = useCallback(() => {
+    recorder.stop();
+    teleprompter.pause();
+  }, [recorder, teleprompter]);
+
+  useEffect(() => {
+    if (recorder.status === 'idle' || recorder.status === 'stopped') teleprompter.pause();
+  }, [recorder.status, teleprompter]);
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 p-3 md:p-5">
@@ -81,13 +108,14 @@ export default function App() {
         <section className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
           <aside className="order-2 space-y-4 xl:order-1">
             <div className="hidden xl:block">
-              <ScriptEditor script={script} onScriptChange={setScript} disabled={recorder.status === 'recording'} />
+              <ScriptEditor script={script} onScriptChange={setScript} disabled={recordingPlaybackLocked} />
               <div className="mt-4">
                 <ScrollControls
-                  isPlaying={teleprompter.isPlaying}
+                  isPlaying={teleprompterPlaying}
                   canResume={teleprompter.scrollTop > 0 && teleprompter.scrollTop < teleprompter.maxScroll}
                   speed={teleprompter.speed}
                   showGuideLine={mergedSettings.showGuideLine}
+                  playbackLocked={recordingActive}
                   onSpeedChange={teleprompter.setSpeed}
                   onToggle={teleprompter.toggle}
                   onReset={teleprompter.reset}
@@ -102,17 +130,18 @@ export default function App() {
               <details open>
                 <summary className="cursor-pointer text-sm font-medium">Script</summary>
                 <div className="mt-3">
-                  <ScriptEditor script={script} onScriptChange={setScript} disabled={recorder.status === 'recording'} />
+                  <ScriptEditor script={script} onScriptChange={setScript} disabled={recordingPlaybackLocked} />
                 </div>
               </details>
               <details>
                 <summary className="cursor-pointer text-sm font-medium">Teleprompter controls</summary>
                 <div className="mt-3">
                   <ScrollControls
-                    isPlaying={teleprompter.isPlaying}
+                    isPlaying={teleprompterPlaying}
                     canResume={teleprompter.scrollTop > 0 && teleprompter.scrollTop < teleprompter.maxScroll}
                     speed={teleprompter.speed}
                     showGuideLine={mergedSettings.showGuideLine}
+                    playbackLocked={recordingActive}
                     onSpeedChange={teleprompter.setSpeed}
                     onToggle={teleprompter.toggle}
                     onReset={teleprompter.reset}
@@ -134,6 +163,7 @@ export default function App() {
                 onSettingsChange={setOverlaySettings}
                 scrollRef={scrollRef}
                 onToggleScroll={teleprompter.toggle}
+                manualScrollEnabled={!recordingPlaybackLocked}
               />
               {camera.loading && <div className="absolute inset-0 grid place-items-center bg-black/60 text-sm">Connecting camera…</div>}
             </div>
@@ -143,10 +173,10 @@ export default function App() {
                 status={recorder.status}
                 seconds={recorder.seconds}
                 canPause={typeof MediaRecorder !== 'undefined' && 'pause' in MediaRecorder.prototype}
-                onStart={() => recorder.start(burnOverlay, mergedSettings, script, scrollRef.current?.scrollTop ?? 0, mirrorPreview)}
-                onPause={recorder.pause}
-                onResume={recorder.resume}
-                onStop={recorder.stop}
+                onStart={startSessionRecording}
+                onPause={pauseSessionRecording}
+                onResume={resumeSessionRecording}
+                onStop={stopSessionRecording}
                 onSwitchCamera={camera.switchCamera}
                 onToggleMic={camera.toggleMic}
                 micMuted={camera.micMuted}
